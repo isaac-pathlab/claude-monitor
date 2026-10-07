@@ -1,0 +1,13 @@
+{
+  "name": "shell-monitor",
+  "owner": {
+    "name": "Isaac Mok"
+  },
+  "description": "Live output of Claude Code's background shells in stacked windows",
+  "plugins": [
+    {
+      "name": "shell-monitor",
+      "source": "./"
+    }
+  ]
+}
