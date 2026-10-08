@@ -17,6 +17,8 @@ const nextNAtom = atom({ plugin: 'shell-monitor', key: 'nextN' } as const, 1)
 const tasksDirAtom = atom({ plugin: 'shell-monitor', key: 'tasksDir' } as const, '')
 // Per window, the first line shown while scrolled up; absent means follow the end.
 const scrollAtom = atom({ plugin: 'shell-monitor', key: 'scroll' } as const, {})
+// The second the windows' run times count to; the poll moves it while any shell runs.
+const nowAtom = atom({ plugin: 'shell-monitor', key: 'now' } as const, 0)
 
 type $ = EngineInterface
 
@@ -36,6 +38,13 @@ const statusLabel = (shell: Shell) =>
 
 const clip = (text: string, max: number) =>
   text.length <= max ? text : `${text.slice(0, Math.max(0, max - 1))}…`
+
+const elapsed = (ms: number) => {
+  const seconds = Math.max(0, Math.round(ms / 1000))
+  const minutes = Math.floor(seconds / 60)
+
+  return minutes > 0 ? `${minutes}m ${seconds % 60}s` : `${seconds}s`
+}
 
 const label = (shell: Shell) =>
   clip((shell.description || shell.command).replace(/\s+/g, ' ').trim(), 40)
@@ -57,10 +66,10 @@ const linesOf = (text: string) => {
 
 /** Equal window heights: the footer row takes 1, each window splits the rest. */
 const layout = (total: number, count: number) => {
-  const height = Math.max(5, Math.floor((total - 1) / count))
+  const height = Math.max(6, Math.floor((total - 1) / count))
 
-  // Border 2 + header 1 + command 1.
-  return { height, room: Math.max(1, height - 4) }
+  // Border 2 + header 1 + command 1 + the status line under the output 1.
+  return { height, room: Math.max(1, height - 5) }
 }
 
 /** The first line a window shows, its saved place clamped to the output. */
@@ -89,6 +98,8 @@ function patchShell($: $, n: number, patch: Partial<Shell>) {
 // Module-local bookkeeping; lost on reload, which the poll tolerates.
 const lastLength = new Map<number, number>()
 let isTicking = false
+// The run times the windows last drew, so the poll redraws only when one changes.
+let lastShown = ''
 // The window the wheel last moved: where the scroll keys go.
 let lastScrolled: number | undefined
 
@@ -164,8 +175,16 @@ async function tick($: $) {
   isTicking = true
   try {
     const live = (await read($, shellsAtom)).filter(one => !one.isFinal)
+    if (live.length === 0) return
+    // Writing the time redraws the pane: do it when a running shell's shown seconds change.
+    const now = await $.clock.now()
+    const shown = live.map(one => elapsed(now - one.startedAt)).join()
+    if (shown !== lastShown) {
+      lastShown = shown
+      await update($, nowAtom, () => now)
+    }
     const dir = await read($, tasksDirAtom)
-    if (live.length === 0 || !dir) return
+    if (!dir) return
 
     for (const shell of live) {
       const text = await $.fs.read(`${dir}/${shell.taskId}.output`).catch(() => undefined)
@@ -420,6 +439,8 @@ export const register: Register = on => {
     const outputs = await Promise.all(shown.map(shell => readOutput($, shell.n)))
     const queued = (await read($, queueAtom)).length
     const saved = await read($, scrollAtom)
+    // Read so the poll's once-a-second write redraws the run times.
+    const now = Math.max(await read($, nowAtom), await $.clock.now())
     const { Box, Text, Button } = $.ui.resolve(e)
 
     const columns = Math.max(10, e.props.bodyColumns - 2)
@@ -446,10 +467,10 @@ export const register: Register = on => {
             >
               <Box flexDirection="row" justifyContent="space-between">
                 <Text bold wrap="truncate-end">
-                  #{shell.n} {label(shell)}{' '}
-                  <Text color={color}>{statusLabel(shell)}</Text>
+                  #{shell.n}
                   {top > 0 && <Text dimColor>{` ↑${top}`}</Text>}
                   {below > 0 && <Text dimColor>{` ↓${below}`}</Text>}
+                  {` ${label(shell)}`}
                 </Text>
                 <Box flexDirection="row" gap={1}>
                   {below > 0 && (
@@ -473,14 +494,21 @@ export const register: Register = on => {
                 {shell.tool === 'PowerShell' ? 'PS> ' : '$ '}
                 {clip(shell.command.replace(/\s+/g, ' '), columns - 4)}
               </Text>
-              {tail.length === 0 && (
-                <Text dimColor>{shell.status === 'running' ? 'waiting for output…' : '(no output)'}</Text>
-              )}
-              {tail.map(line => (
+              {/* The status line follows the last output line, not the window's bottom edge. */}
+              <Box flexDirection="column" overflow="hidden">
+                {tail.length === 0 && (
+                  <Text dimColor>{shell.status === 'running' ? 'waiting for output…' : '(no output)'}</Text>
+                )}
+                {tail.map(line => (
+                  <Text wrap="truncate-end">
+                    {line === '' ? ' ' : clip(line, columns)}
+                  </Text>
+                ))}
                 <Text wrap="truncate-end">
-                  {line === '' ? ' ' : clip(line, columns)}
+                  <Text color={color}>{statusLabel(shell)}</Text>
+                  <Text dimColor>{` · ${elapsed((shell.endedAt ?? now) - shell.startedAt)}`}</Text>
                 </Text>
-              ))}
+              </Box>
             </Box>
           )
         })}

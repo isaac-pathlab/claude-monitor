@@ -214,7 +214,7 @@ test('each window scrolls on its own and follows the end again at the bottom', a
   files.set('task2', many)
   await clock.advance(500)
 
-  // 30 rows, 2 windows: 14 rows each, 10 lines of output shown.
+  // 30 rows, 2 windows: 14 rows each, 9 lines of output shown.
   const ui = await $.ui.mount({ plugin: 'shell-monitor', surface: 'terminal', ...PANE })
   expect(await ui.find({ type: 'Text', text: /^line 50$/ })).toBeDefined()
 
@@ -239,5 +239,22 @@ test('each window scrolls on its own and follows the end again at the bottom', a
   await ui.press({ key: 'end-1' })
   expect(await ui.find({ key: 'end-1' })).toBeUndefined()
   expect(await ui.find({ type: 'Text', text: /^line 51$/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('the status line under the output ticks while the shell runs and stops when it ends', async ($, on) => {
+  const { clock, files } = await start($, on)
+  await $.tool.call({ tool: 'Bash', command: 'bg serve', tool_use_id: 't1' })
+  files.set('task1', 'listening')
+
+  const ui = await $.ui.mount({ plugin: 'shell-monitor', surface: 'terminal', ...PANE })
+  await clock.advance(5000)
+  expect(await ui.find({ type: 'Text', text: /^ · 5s$/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /● running/ })).toBeDefined()
+
+  await notify($, 'task1', 'completed', 0)
+  await clock.advance(5000)
+  expect(await ui.find({ type: 'Text', text: /✓ exit 0/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /^ · 5s$/ })).toBeDefined()
   await ui.unmount()
 })

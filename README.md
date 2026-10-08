@@ -4,7 +4,8 @@ A Claude Code mod that shows the live output (stdout + stderr) of the background
 
 - Captures Bash/PowerShell calls that end up in the background: started with `run_in_background`, or moved there later (Ctrl+B, a timeout). Foreground commands are ignored.
 - Up to **3 windows** stacked in one pane, equal height. Further shells wait in a queue; closing a window lets the next one in.
-- Windows **never close on their own** when a command finishes. The title and border show the status: `● running`, `✓ exit 0`, `✗ exit N`, `■ killed`.
+- Windows **never close on their own** when a command finishes. The line under the output and the border show the status: `● running`, `✓ exit 0`, `✗ exit N`, `■ killed`.
+- That status line, right under the last output line, also shows the run time, which ticks each second while the shell runs.
 - Each window scrolls on its own: the mouse wheel moves the window under the pointer, the scroll keys the one last wheeled. Scrolled up, a window stays put (`↑N ↓N` in its title); `[ end ]` or scrolling back down follows new output again.
 - Each window has a clickable `[ close ]` (keys `1`–`3` while the pane is focused); `[ close finished ]` sits at the bottom.
 
