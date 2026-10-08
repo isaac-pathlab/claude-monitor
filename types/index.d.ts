@@ -24,6 +24,7 @@ declare module 'claude-code' {
       queue: number[]
       nextN: number
       tasksDir: string
+      scroll: Record<string, number>
       output: StateFamily<string>
     }
   }

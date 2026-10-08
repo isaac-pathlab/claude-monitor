@@ -189,3 +189,55 @@ test('bare /shell shows the running shells, else the newest', async ($, on) => {
   await run($, 'shell-close', 'all')
   expect((await run($, 'shell', '')).text).toBe('Showing #3.')
 })
+
+/** The person's wheel over the Shells pane body, at `row`. */
+function wheel($: Engine, by: number, row?: number) {
+  return $.ui.scroll({
+    component: 'Pane',
+    requestId: 'shells',
+    offset: 0,
+    by,
+    bodyRows: 30,
+    contentRows: 30,
+    origin: { kind: 'person' },
+    ...(row === undefined ? {} : { pointer: { column: 5, row } }),
+  } as never)
+}
+
+test('each window scrolls on its own and follows the end again at the bottom', async ($, on) => {
+  const { clock, files } = await start($, on)
+  for (const n of [1, 2]) {
+    await $.tool.call({ tool: 'Bash', command: `bg job ${n}`, tool_use_id: `t${n}` })
+  }
+  const many = Array.from({ length: 50 }, (_, i) => `line ${i + 1}`).join('\n')
+  files.set('task1', many)
+  files.set('task2', many)
+  await clock.advance(500)
+
+  // 30 rows, 2 windows: 14 rows each, 10 lines of output shown.
+  const ui = await $.ui.mount({ plugin: 'shell-monitor', surface: 'terminal', ...PANE })
+  expect(await ui.find({ type: 'Text', text: /^line 50$/ })).toBeDefined()
+
+  // Wheel up 5 over the first window (rows 0-13) only.
+  await wheel($, -5, 3)
+  expect(await ui.find({ type: 'Text', text: /↓5/ })).toBeDefined()
+  expect(await ui.findAll({ type: 'Text', text: /^line 45$/ })).toHaveLength(2)
+  expect(await ui.findAll({ type: 'Text', text: /^line 50$/ })).toHaveLength(1)
+  expect(await ui.find({ key: 'end-1' })).toBeDefined()
+  expect(await ui.find({ key: 'end-2' })).toBeUndefined()
+
+  // Scrolled up, the window stays put as output grows.
+  files.set('task1', `${many}\nline 51`)
+  await clock.advance(500)
+  expect(await ui.find({ type: 'Text', text: /↓6/ })).toBeDefined()
+
+  // Keys (no pointer) go to the window the wheel last moved; past the top clamps.
+  await wheel($, -100)
+  expect(await ui.find({ type: 'Text', text: /^line 1$/ })).toBeDefined()
+
+  // [ end ] returns to following.
+  await ui.press({ key: 'end-1' })
+  expect(await ui.find({ key: 'end-1' })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: /^line 51$/ })).toBeDefined()
+  await ui.unmount()
+})
