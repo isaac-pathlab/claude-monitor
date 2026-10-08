@@ -32,6 +32,7 @@ From a local clone instead (`git clone https://github.com/isaac-pathlab/claude-s
 ```
 claude plugin marketplace add <path-to-clone>
 claude plugin install shell-monitor@shell-monitor
+claude plugin install agent-monitor@shell-monitor
 ```
 
 Edits to a local clone are picked up with `/reload-plugins`.
@@ -42,12 +43,23 @@ Edits to a local clone are picked up with `/reload-plugins`.
 - The shell list lives for the session only; the last 200 KB of each shell's output is kept.
 - Panes the mod opens on its own appear when the terminal is at least 144 columns wide; otherwise a toast points to `/shell n`.
 
-## Development
+## agent-monitor
+
+This repository also holds [agent-monitor](agent-monitor/README.md): an **Agents** pane that shows each subagent's steps live (its text in full and its tool calls grouped, never its thinking), in the same stacked, scrollable windows.
 
 ```
-claude --plugin-dir <path-to-clone>   # load for one session, hot-reloads on save
-claude plugin validate .
-claude plugin test .
+/plugin install agent-monitor --marketplace isaac-pathlab/claude-shell-monitor
+```
+
+## Development
+
+Each plugin lives in its own folder (`shell-monitor/`, `agent-monitor/`); the marketplace file at the root lists both.
+
+```
+claude --plugin-dir <path-to-clone>/shell-monitor   # load for one session, hot-reloads on save
+claude plugin validate .                              # the marketplace
+claude plugin validate shell-monitor
+claude plugin test shell-monitor
 ```
 
 ## License

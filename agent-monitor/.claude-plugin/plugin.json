@@ -1,0 +1,8 @@
+{
+  "name": "agent-monitor",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Live steps of the subagents Claude starts (their text and grouped tool calls), in up to 3 stacked windows (the rest queued)",
+  "author": { "name": "Isaac Mok" },
+  "types": "./types/index.d.ts"
+}

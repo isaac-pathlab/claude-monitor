@@ -3,11 +3,15 @@
   "owner": {
     "name": "Isaac Mok"
   },
-  "description": "Live output of Claude Code's background shells in stacked windows",
+  "description": "Live views of Claude Code's background shells and subagents in stacked windows",
   "plugins": [
     {
       "name": "shell-monitor",
-      "source": "./"
+      "source": "./shell-monitor"
+    },
+    {
+      "name": "agent-monitor",
+      "source": "./agent-monitor"
     }
   ]
 }
