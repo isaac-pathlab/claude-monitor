@@ -342,11 +342,10 @@ export const register: Register = on => {
     const queue = await read($, queueAtom)
     const now = await $.clock.now()
     const lines = shells.map(shell => {
-      const seconds = Math.round(((shell.endedAt ?? now) - shell.startedAt) / 1000)
       const where = slots.includes(shell.n) ? 'shown' : queue.includes(shell.n) ? 'queued' : 'hidden'
       const agent = shell.agentId ? ' [subagent]' : ''
 
-      return `#${shell.n}  ${statusLabel(shell)}  ${seconds}s  ${where}${agent}  ${clip(shell.command.replace(/\s+/g, ' '), 80)}`
+      return `#${shell.n}  ${statusLabel(shell)}  ${elapsed((shell.endedAt ?? now) - shell.startedAt)}  ${where}${agent}  ${clip(shell.command.replace(/\s+/g, ' '), 80)}`
     })
 
     return { text: lines.join('\n') }
