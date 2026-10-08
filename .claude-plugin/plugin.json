@@ -1,6 +1,6 @@
 {
   "name": "shell-monitor",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "description": "Live output of the background shells Claude starts, in up to 3 stacked windows (the rest queued)",
   "author": { "name": "Isaac Mok" },
