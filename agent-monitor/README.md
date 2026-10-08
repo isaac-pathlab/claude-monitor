@@ -24,7 +24,7 @@ Closing the whole pane (its `[X]`, Esc, or ctrl+x x) hides every window and clea
 ## Install
 
 ```
-/plugin install agent-monitor --marketplace isaac-pathlab/claude-shell-monitor
+/plugin install agent-monitor --marketplace isaac-pathlab/claude-monitor
 ```
 
 ## Notes
