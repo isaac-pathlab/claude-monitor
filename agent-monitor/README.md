@@ -6,7 +6,7 @@ A Claude Code mod that shows the steps of the subagents Claude starts, live, in 
 - Up to **3 windows** stacked in one pane, equal height. Further agents wait in a queue; closing a window lets the next one in.
 - A subagent started by another subagent gets its own window, with `from #n` in its title.
 - Windows **never close on their own** when an agent finishes. The line under the steps and the border show the status: `● running`, `◐ waiting` (on its own background work), `✓ done`, `✗ failed`, `■ killed`. A failed tool call shows its group as `✗`.
-- That status line, right under the last step, also shows the tool-use count and run time.
+- That status line, right under the last step, also shows the tool-use count and the run time, which ticks each second while the agent runs.
 - Each window scrolls on its own: the mouse wheel moves the window under the pointer, the scroll keys the one last wheeled. Scrolled up, a window stays put (`↑N ↓N` in its title); `[ end ]` or scrolling back down follows new steps again.
 - Each window has a clickable `[ close ]` (keys `1`–`3` while the pane is focused); `[ close finished ]` sits at the bottom.
 
